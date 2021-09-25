@@ -32,7 +32,7 @@ private:
     QTimer * timer;
     int countdown = 15;
     int score[3] = {0};
-    bool isWin = false, isPause = false;
+    bool isWin = false, isPause = false, isPaintable = false;
 
     void setMyLabel(QLabel *&, QPixmap, int y, int x = -1);
     void setAnimation();

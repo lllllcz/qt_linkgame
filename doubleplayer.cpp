@@ -190,19 +190,25 @@ void DoublePlayer::chooseBox(int num, int x, int y)
         score[num] += 20;
 
         //判断是否结束
+        int a1 = x1, a2 = x2, b1 = y1, b2 = y2;
         isWin = checkRemainder();
-        this->update();
+        x1 = a1; x2 = a2; y1 = b1; y2 = b2;
     }
 }
 
 bool DoublePlayer::isRemovable()
 {
+    if (x1 == x2 && abs(y1 - y2) == 1) return true;
+    if (y1 == y2 && abs(x1 - x2) == 1) return true;
+
+    isPaintable = true;
+
     //保证1号在2号下方
     if (y1 < y2) {
         exchange(x1, x2);
         exchange(y1, y2);
     }
-    x01 = x02 = y01 = y02;
+    x01 = x02 = y01 = y02 = -1;
     //向左找
     if (horizontalPath(-1)) return true;
     //向右找
@@ -222,10 +228,8 @@ bool DoublePlayer::isRemovable()
         //向下找
         if (verticalPath(1, -1)) return true;
     }
-
+    isPaintable = false;
     x01 = x02 = y01 = y02 = -1;
-    if (x1 == x2 && abs(y1 - y2) == 1) return true;
-    if (y1 == y2 && abs(x1 - x2) == 1) return true;
 
     return false;
 }
@@ -392,7 +396,7 @@ void DoublePlayer::paintEvent(QPaintEvent *)
     role2->moveInGame();
 
     //画路线
-    if (x01 != -1 && y01 != -1) {
+    if (isPaintable) {
         QPainterPath path(QPoint(x1*100+150, y1*100+50));
         painter.setPen(QPen(Qt::black, 10));
         path.lineTo(x01*100+150, y01*100+50);
@@ -431,6 +435,10 @@ void DoublePlayer::keyPressEvent(QKeyEvent *event)
 {
     if (isWin) return;
 
+    if (isPaintable) {
+        isPaintable = false;
+    }
+
     if (event->key() == Qt::Key_P)
         pauseGame();
 
@@ -464,6 +472,8 @@ void DoublePlayer::keyPressEvent(QKeyEvent *event)
     }
     role1->changeDirection();
     role2->changeDirection();
+
+    this->update();
 
     if (isWin) {
         setAnimation();
@@ -524,12 +534,12 @@ void DoublePlayer::pauseGame()
 {
     if (isPause) {
         isPause = false;
-        pauseLabel->hide();
+        //pauseLabel->hide();
         timer->start();
     }
     else {
         isPause = true;
-        pauseLabel->show();
+        //pauseLabel->show();
         timer->stop();
     }
 }

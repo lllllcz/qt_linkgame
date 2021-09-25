@@ -307,7 +307,7 @@ void PlayScene::paintEvent(QPaintEvent *)
     QString str;
 
     //画倒计时
-    QRectF clock(0, 505, 195, 95);
+    QRectF clock(0, 500, 195, 90);
     painter.setPen(QPen(QColor(255, 0, 0), 5));
     painter.setFont(QFont("Arial", 18));
     if (countdown > 9)
@@ -318,7 +318,7 @@ void PlayScene::paintEvent(QPaintEvent *)
     painter.drawText(clock, Qt::AlignCenter, str);
 
     //画分数
-    QRectF scoreBoard(205, 500, 190, 90);
+    QRectF scoreBoard(200, 500, 195, 90);
     painter.setPen(QPen(QColor(0, 0, 255), 5));
     str = QString("得分 %1").arg(score);
     painter.drawRoundedRect(scoreBoard, 20, 15);
@@ -327,9 +327,18 @@ void PlayScene::paintEvent(QPaintEvent *)
 
 void PlayScene::keyPressEvent(QKeyEvent *event)
 {
-    isPaintable = false;
-
     if (isWin) return;
+
+    if (isPaintable) {
+        clearBox(secondPos);
+        int tmp1 = activePos, tmp2 = secondPos;
+        isWin = checkRemainder();
+        activePos = tmp1;
+        secondPos = tmp2;
+        isPaintable = false;
+        activePos = -1;
+        secondPos = -1;
+    }
 
     if (event->key() == Qt::Key_P)
         pauseGame();
@@ -392,7 +401,7 @@ void PlayScene::keyPressEvent(QKeyEvent *event)
         timer->stop();
         //emit playSceneBack();
     }
-    qDebug() << x1 << y1 << "->" << x01 << y01 << "->" << x02 << y02 << "->" << x2 << y2;
+    //qDebug() << x1 << y1 << "->" << x01 << y01 << "->" << x02 << y02 << "->" << x2 << y2;
 }
 
 void PlayScene::mousePressEvent(QMouseEvent *ev)
@@ -480,13 +489,13 @@ void PlayScene::chooseBox(int x)
     if (activeType == boxType[x/4][x%4]) {
         secondPos = x;
         if (isRemovable()) {
-            clearBox(secondPos);
+            //clearBox(secondPos);
             score += 20;
-            isWin = checkRemainder();
+            //isWin = checkRemainder();//注释掉，以免影响isPaintable，或许应该改改isRemovable
         }
         else return;
-        activePos = -1;
-        secondPos = -1;
+        //activePos = -1;
+        //secondPos = -1;
     }
 
     return;
