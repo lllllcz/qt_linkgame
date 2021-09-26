@@ -19,11 +19,13 @@ public:
     PlayScene * playScene2 = NULL;
 
     DoublePlayer * doublePlayerScene = NULL;
+    DoublePlayer * doublePlayerScene2 = NULL;
 
 private:
-    QPushButton * startButton, * loadButton, * startButton2;
+    QPushButton * startButton, * loadButton, * startButton2, * loadButton2;
 
     QPixmap startPix, backgroundPix;
 
     void playGame(PlayScene* &, bool);
+    void playDoublePlayerGame(DoublePlayer* &, bool);
 };

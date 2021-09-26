@@ -39,8 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
     loadButton = new QPushButton(this);
     loadButton->setFixedSize(150, 60);
     loadButton->setText("加载单人游戏");
-    loadButton->move((this->width() - loadButton->width()) * 0.5,
-                     this->height() * 0.5 + 100);
+    loadButton->move(this->width() * 0.5 - loadButton->width() - 10,
+                     this->height() * 0.5 + 200);
     connect(loadButton, &QPushButton::clicked, [=](){
         playGame(playScene2, false);
     });
@@ -50,20 +50,19 @@ MainWindow::MainWindow(QWidget *parent)
     startButton2->setFixedSize(150, 60);
     startButton2->setText("双人游戏");
     startButton2->move((this->width() - loadButton->width()) * 0.5,
-                       this->height() * 0.5 + 200);
+                       this->height() * 0.5 + 100);
     connect(startButton2, &QPushButton::clicked, [=](){
-        doublePlayerScene = new DoublePlayer(true);
+        playDoublePlayerGame(doublePlayerScene, true);
+    });
 
-        doublePlayerScene->setGeometry(this->geometry());
-        this->hide();
-        doublePlayerScene->show();
-
-        connect(doublePlayerScene, &DoublePlayer::doublePlayerSceneBack, [=](){
-            this->setGeometry(doublePlayerScene->geometry());
-            this->show();
-            delete doublePlayerScene;
-            doublePlayerScene = NULL;
-        });
+    //设置双人游戏加载按钮
+    loadButton = new QPushButton(this);
+    loadButton->setFixedSize(150, 60);
+    loadButton->setText("加载双人游戏");
+    loadButton->move(this->width() * 0.5 + 10,
+                     this->height() * 0.5 + 200);
+    connect(loadButton, &QPushButton::clicked, [=](){
+        playDoublePlayerGame(doublePlayerScene2, false);
     });
 }
 
@@ -102,3 +101,24 @@ void MainWindow::playGame(PlayScene *& ps, bool isNew)
     });
 }
 
+void MainWindow::playDoublePlayerGame(DoublePlayer *& dp, bool isNew)
+{
+    dp = new DoublePlayer(isNew);
+
+    dp->setGeometry(this->geometry());
+    this->hide();
+    dp->show();
+
+    connect(dp, &DoublePlayer::doublePlayerSceneBack, [=](){
+        this->setGeometry(dp->geometry());
+        this->show();
+        delete dp;
+        doublePlayerScene = NULL;
+        doublePlayerScene2 = NULL;
+    });
+
+    connect(dp, &DoublePlayer::loadGame, [=](){
+        playDoublePlayerGame(doublePlayerScene2, false);
+        dp->close();
+    });
+}

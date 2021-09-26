@@ -6,6 +6,8 @@
 #include <QInputEvent>
 #include <QPropertyAnimation>
 
+#include <sstream>
+
 #include <QDebug>
 
 DoublePlayer::DoublePlayer(QWidget *parent) : QWidget(parent)
@@ -40,10 +42,10 @@ DoublePlayer::DoublePlayer(bool isNew)
     connect(pauseButton, &QPushButton::clicked, this, &DoublePlayer::pauseGame);
 
     //加载背景
-    backgroundPix.load(":/res/playBack.png");
+    backgroundPix.load(":/res/playBack2.jpg");
 
     //加载存档文件
-    //archiveFile = new QFile("../Qlink/archive.txt");
+    archiveFile = new QFile("./archive2.txt");
 
     //加载人物
     role1 = new RoleLabel(this);
@@ -60,15 +62,6 @@ DoublePlayer::DoublePlayer(bool isNew)
                 boxType[i][j] = rand() % 3;
         }
 
-        //加载箱子
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                boxes[i][j] = new BoxLabel(boxType[i][j]);
-                boxes[i][j]->setParent(this);
-                boxes[i][j]->move(200 + j*100, 100 + i*100);
-            }
-        }
-
         //初始化地图空间
         for (int k = 0; k < 30; k++)
             isEmpty[k/6][k%6] = true;
@@ -77,8 +70,28 @@ DoublePlayer::DoublePlayer(bool isNew)
                 isEmpty[i+1][j+1] = false;
         }
     }
+    //加载游戏
     else {
-        //加载游戏
+        loadGameInf();
+        role1->changeDirection();
+        role2->changeDirection();
+    }
+    //加载箱子
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (!isEmpty[i+1][j+1]) {
+                boxes[i][j] = new BoxLabel(boxType[i][j]);
+                boxes[i][j]->setParent(this);
+                boxes[i][j]->move(200 + j*100, 100 + i*100);
+            }
+        }
+    }
+
+    if (!isNew) {
+        if (activePos1[1] != -1)
+            boxes[activePos1[1]/4][activePos1[1]%4]->changePix(false, 1);
+        if (activePos1[2] != -1)
+            boxes[activePos1[2]/4][activePos1[2]%4]->changePix(false, 2);
     }
 
     //设置1号胜利标志
@@ -113,6 +126,18 @@ DoublePlayer::DoublePlayer(bool isNew)
     QPixmap pausingPix(":/res/pausing.png");
     setMyLabel(pauseLabel, pausingPix, 50);
     pauseLabel->hide();
+
+    //保存按钮
+    QPushButton * saveButton = new QPushButton("保存", pauseLabel);
+    saveButton->setFixedSize(150, 50);
+    saveButton->move((pauseLabel->width() - saveButton->width()) * 0.5, 200);
+    connect(saveButton, &QPushButton::clicked, this, &DoublePlayer::saveGameInf);
+
+    //加载按钮
+    QPushButton * loadButton = new QPushButton("加载双人游戏", pauseLabel);
+    loadButton->setFixedSize(150, 50);
+    loadButton->move((pauseLabel->width() - loadButton->width()) * 0.5, 300);
+    connect(loadButton, &QPushButton::clicked, this, &DoublePlayer::loadGame);
 }
 
 void DoublePlayer::roleAction(RoleLabel *& role, int dir)
@@ -534,12 +559,89 @@ void DoublePlayer::pauseGame()
 {
     if (isPause) {
         isPause = false;
-        //pauseLabel->hide();
+        pauseLabel->hide();
         timer->start();
     }
     else {
         isPause = true;
-        //pauseLabel->show();
+        pauseLabel->show();
         timer->stop();
     }
+}
+
+void DoublePlayer::saveGameInf()
+{
+    //d1+4,x1,y1,d2+4,x2,y2,bT,iE,coundown,i,s1/10,i,s2/10,i,aP1,i,aP2,i,aT1,i,aT2,e
+    //1 + 1 + 1 + 1 + 1 + 1 + 12 + 30 + 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 = 69
+    int i = 0;
+    std::stringstream ss;
+
+    ss << role1->direction + 4 << role1->posX << role1->posY;
+    ss << role2->direction + 4 << role2->posX << role2->posY;
+    for (i = 0; i < 12; i++)
+            ss << boxType[i/4][i%4];
+        for (i = 0; i < 30; i++)
+            ss << isEmpty[i/6][i%6];
+    ss << countdown << 'i'
+       << score[1]/10 << 'i' << score[2]/10 << 'i'
+       << activePos1[1] << 'i' << activePos1[2] << 'i'
+       << activeType[1] << 'i' << activeType[2] << 'e';
+
+    ss >> archiveData;
+    //qDebug() << archiveData[0];
+
+    archiveFile->open(QIODevice::WriteOnly);
+    if (archiveFile->write(archiveData) == -1)
+        qDebug() << "读取文件错误";
+    archiveFile->close();
+}
+
+void DoublePlayer::loadGameInf()
+{
+    int i, begin, end, tmp;
+    int array[7] = {0};
+
+    archiveFile->open(QIODevice::ReadOnly);
+    if (-1 == archiveFile->read(archiveData, 70))
+        qDebug() << "读取文件错误";
+    archiveFile->close();
+
+    role1->direction = archiveData[0] - 52;
+    role1->posX = archiveData[1] - 48;
+    role1->posY = archiveData[2] - 48;
+    role2->direction = archiveData[3] - 52;
+    role2->posX = archiveData[4] - 48;
+    role2->posY = archiveData[5] - 48;
+
+    for (i = 0; i < 12; i++)
+        boxType[i/4][i%4] = archiveData[i+6] - 48;
+    for (i = 0; i < 30; i++)
+        isEmpty[i/6][i%6] = archiveData[i+18] - 48;
+
+    begin = 47;
+    i = 0;
+    for (end = 48; i < 7; end++) {
+        if (archiveData[end] == 'i' || archiveData[end] == 'e') {
+            if (end - begin == 2)
+                array[i] = archiveData[begin+1] - 48;
+            else if (archiveData[begin+1] == '-')
+                array[i] = -1;
+            else {
+                tmp = (archiveData[begin+1] - 48) * 10;
+                array[i] = tmp + archiveData[begin+2] - 48;
+            }
+            begin = end;
+            i++;
+        }
+    }
+
+    countdown = array[0];
+    score[1] = array[1] * 10;
+    score[2] = array[2] * 10;
+    activePos1[1] = array[3];
+    activePos1[2] = array[4];
+    activeType[1] = array[5];
+    activeType[2] = array[6];
+
+    qDebug() << activePos1[1] << activePos1[2];
 }

@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include <sstream>
-#include <string>
+//#include <string>
 
 #include <QDebug>
 
@@ -44,10 +44,10 @@ PlayScene::PlayScene(bool isNew)
     connect(pauseButton, &QPushButton::clicked, this, &PlayScene::pauseGame);
 
     //加载背景
-    playBackgroundPix.load(":/res/playBack.png");
+    playBackgroundPix.load(":/res/playBack2.jpg");
 
     //加载存档文件
-    archiveFile = new QFile("../Qlink/archive.txt");
+    archiveFile = new QFile("./archive.txt");
 
     //设置人物
     role = new RoleLabel(this);
@@ -68,15 +68,6 @@ PlayScene::PlayScene(bool isNew)
 //        qDebug() << boxType[1][0] << boxType[1][1] << boxType[1][2] << boxType [1][3];
 //        qDebug() << boxType[2][0] << boxType[2][1] << boxType[2][2] << boxType [2][3] << '\n';
 
-        //加载箱子
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                boxes[i][j] = new BoxLabel(boxType[i][j]);
-                boxes[i][j]->setParent(this);
-                boxes[i][j]->move(200 + j*100, 100 + i*100);
-            }
-        }
-
         //初始化地图空间
         for (int k = 0; k < 30; k++)
             isEmpty[k/6][k%6] = true;
@@ -89,21 +80,22 @@ PlayScene::PlayScene(bool isNew)
         //加载游戏
         loadGameInf();
         role->changeDirection();
-
-        //加载箱子
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
-                if (!isEmpty[i+1][j+1]) {
-                    boxes[i][j] = new BoxLabel(boxType[i][j]);
-                    boxes[i][j]->setParent(this);
-                    boxes[i][j]->move(200 + j*100, 100 + i*100);
-                }
+    }
+    //加载箱子
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (!isEmpty[i+1][j+1]) {
+                boxes[i][j] = new BoxLabel(boxType[i][j]);
+                boxes[i][j]->setParent(this);
+                boxes[i][j]->move(200 + j*100, 100 + i*100);
             }
         }
+    }
 
+    if (!isNew && activePos != -1) {
         if(activePos != -1){
             boxes[activePos/4][activePos%4]->changePix(false);
-            activeType = boxType[activePos/4][activePos%4];
+            //activeType = boxType[activePos/4][activePos%4];
         }
     }
 
@@ -191,24 +183,25 @@ void PlayScene::pauseGame()
 void PlayScene::saveGameInf()
 {
     //储存数据
+    //d+4,x,y,boxType,isEmpty,coundown,i,score/10,i,activePos,i,activeType,e
+    //1 + 1 + 1 + 12 + 30 + 2 + 1 + 2 + 1 + 2 + 1 + 1 + 1 = 56
     int i = 0;
-    std::string str;
+    //std::string str;
     std::stringstream ss;
 
     ss << role->direction + 4 << role->posX << role->posY;
-    for (i = 0; i< 12; i++)
+    for (i = 0; i < 12; i++)
         ss << boxType[i/4][i%4];
     for (i = 0; i < 30; i++)
         ss << isEmpty[i/6][i%6];
     ss << countdown << 'i' << score/10 << 'i'
        << activePos << 'i' << activeType << 'e';
 
-    ss >> str;
+    ss >> archiveData;
+    qDebug() << archiveData[0];
 
-    str.push_back('e');
-
-    for (i = 0; str.at(i) != 'e'; i++)
-        archiveData[i] = str.at(i);
+//    for (i = 0; str.at(i) != 'e'; i++)
+//        archiveData[i] = str.at(i);
 
     archiveFile->open(QIODevice::WriteOnly);
     if (archiveFile->write(archiveData) == -1)

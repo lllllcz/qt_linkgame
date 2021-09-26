@@ -5,6 +5,7 @@
 #include "boxlabel.h"
 #include <QTimer>
 #include <QPushButton>
+#include <QFile>
 
 class DoublePlayer : public QWidget
 {
@@ -53,9 +54,15 @@ private:
     bool checkRemainder();
 
     void pauseGame();
+    void saveGameInf();
+    void loadGameInf();
+
+    QFile * archiveFile;
+    char archiveData[75] = {'\0'};
 
 signals:
     void doublePlayerSceneBack();
+    void loadGame();
 
 };
 
