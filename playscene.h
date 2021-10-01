@@ -29,10 +29,10 @@ private:
     QLabel * winLabel, * failLabel, *pauseLabel;
     //QLabel * clearLabel;
 
-    bool isEmpty[5][6];
+    bool isEmpty[8+2][WIDTH+2];
 
-    int boxType[3][4];
-    BoxLabel * boxes[3][4];
+    int boxType[8][WIDTH];
+    BoxLabel * boxes[8][WIDTH];
 
     int activeType = -1;
     int activePos = -1;
@@ -46,7 +46,7 @@ private:
     int toolPos = -1;
     QLabel * toolLabel;
 
-    int countdown = 30;
+    int countdown = 59;
     int score = 0;
 
     QTimer * timer, * toolTimer;
@@ -74,7 +74,7 @@ private:
     bool isFirst = true;
 
     QFile * archiveFile;
-    char archiveData[60] = {'\0'};
+    char archiveData[SUM+18] = {'\0'};
 
 signals:
     //返回信号

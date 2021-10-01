@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QLabel>
+#include "rolelabel.h"
+
+extern const int SIZE;
 
 class BoxLabel : public QLabel
 {

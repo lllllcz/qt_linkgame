@@ -20,7 +20,7 @@ PlayScene::PlayScene(QWidget *parent) : QMainWindow(parent)
 PlayScene::PlayScene(bool isNew)
 {
     //配置主场景
-    setFixedSize(800, 600);
+    setFixedSize(840, 700);
     setWindowIcon(QIcon(":/res/link.png"));
     setWindowTitle("连连看");
 
@@ -58,8 +58,8 @@ PlayScene::PlayScene(bool isNew)
         QTime time = QTime::currentTime();
         unsigned seed = time.msec() + time.second();
         srand(seed);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++)
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++)
                 boxType[i][j] = rand() % 3;
         }
 
@@ -69,10 +69,12 @@ PlayScene::PlayScene(bool isNew)
 //        qDebug() << boxType[2][0] << boxType[2][1] << boxType[2][2] << boxType [2][3] << '\n';
 
         //初始化地图空间
-        for (int k = 0; k < 30; k++)
-            isEmpty[k/6][k%6] = true;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++)
+        for (int i = 0; i < HEIGHT+2; i++) {
+            for (int j = 0; j < WIDTH+2; j++)
+                isEmpty[i][j] = true;
+        }
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++)
                 isEmpty[i+1][j+1] = false;
         }
     }
@@ -82,19 +84,19 @@ PlayScene::PlayScene(bool isNew)
         role->changeDirection();
     }
     //加载箱子
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
             if (!isEmpty[i+1][j+1]) {
                 boxes[i][j] = new BoxLabel(boxType[i][j]);
                 boxes[i][j]->setParent(this);
-                boxes[i][j]->move(200 + j*100, 100 + i*100);
+                boxes[i][j]->move(2*SIZE + j*SIZE, SIZE + i*SIZE);
             }
         }
     }
 
     if (!isNew && activePos != -1) {
         if(activePos != -1){
-            boxes[activePos/4][activePos%4]->changePix(false);
+            boxes[activePos/WIDTH][activePos%WIDTH]->changePix(false);
             //activeType = boxType[activePos/4][activePos%4];
         }
     }
@@ -103,19 +105,21 @@ PlayScene::PlayScene(bool isNew)
     toolType = rand() % 3;
 //    toolType = 2;
 
-    toolPos = rand() % 30;
-    while(!isEmpty[toolPos/6][toolPos%6])
-        toolPos = (toolPos + 1) %30;
+    toolPos = rand() % ((WIDTH+2)*(HEIGHT+2));
+    while(!isEmpty[toolPos/(WIDTH+2)][toolPos%(WIDTH+2)])
+        toolPos = (toolPos + 1) % ((HEIGHT+2)*(WIDTH+2));
     if (toolPos == 0) toolPos++;
 
     toolLabel = new QLabel(this);
-    toolLabel->setGeometry(0, 0, 100, 100);
+    toolLabel->setGeometry(0, 0, SIZE, SIZE);
+    QPixmap pix;
     switch (toolType) {
-    case 0: toolLabel->setPixmap(QPixmap(":/res/tool1.png"));break;
-    case 1: toolLabel->setPixmap(QPixmap(":/res/tool2.png"));break;
-    case 2: toolLabel->setPixmap(QPixmap(":/res/tool3.png"));break;
+    case 0: pix = QPixmap(":/res/tool1.png");break;
+    case 1: pix = QPixmap(":/res/tool2.png");break;
+    case 2: pix = QPixmap(":/res/tool3.png");break;
     }
-    toolLabel->move(100 + toolPos%6 * 100, toolPos/6 * 100);
+    toolLabel->setPixmap(pix.scaled(SIZE, SIZE));
+    toolLabel->move(SIZE + toolPos%(WIDTH+2) * SIZE, toolPos/(WIDTH+2) * SIZE);
 
     //胜利标志设置
     QPixmap winPix(":/res/succeed.png");
@@ -183,18 +187,18 @@ void PlayScene::pauseGame()
 void PlayScene::saveGameInf()
 {
     //储存数据
-    //d+4,x,y,boxType,isEmpty,coundown,i,score/10,i,activePos,i,activeType,e
+    //d+4,x,y,boxType,isEmpty,coundown,i,score,i,activePos,i,activeType,e
     //1 + 1 + 1 + 12 + 30 + 2 + 1 + 2 + 1 + 2 + 1 + 1 + 1 = 56
     int i = 0;
     //std::string str;
     std::stringstream ss;
 
-    ss << role->direction + 4 << role->posX << role->posY;
-    for (i = 0; i < 12; i++)
-        ss << boxType[i/4][i%4];
-    for (i = 0; i < 30; i++)
-        ss << isEmpty[i/6][i%6];
-    ss << countdown << 'i' << score/10 << 'i'
+    ss << role->direction + 4 << role->posY;
+    for (i = 0; i < WIDTH*HEIGHT; i++)
+        ss << boxType[i/WIDTH][i%WIDTH];
+    for (i = 0; i < (WIDTH+2)*(HEIGHT+2); i++)
+        ss << isEmpty[i/(WIDTH+2)][i%(WIDTH+2)];
+    ss << countdown << 'i' << score << 'i' << role->posX << 'i'
        << activePos << 'i' << activeType << 'e';
 
     ss >> archiveData;
@@ -211,48 +215,45 @@ void PlayScene::saveGameInf()
 
 void PlayScene::loadGameInf()
 {
-    int i = 0, tmp;
+    int i = 0, begin, end, tmp;
+    int array[5] = {0};
 
     archiveFile->open(QIODevice::ReadOnly);
-    if (-1 == archiveFile->read(archiveData, 60))
+    if (-1 == archiveFile->read(archiveData, SUM+18))
         qDebug() << "读取文件错误";
     archiveFile->close();
 
     role->direction = archiveData[0] - 52;
-    role->posX = archiveData[1] - 48;
-    role->posY = archiveData[2] - 48;
+    role->posY = archiveData[1] - 48;
 
-    for (; i < 12; i++)
-        boxType[i/4][i%4] = archiveData[i+3] - 48;
+    for (; i < WIDTH*HEIGHT; i++)
+        boxType[i/WIDTH][i%WIDTH] = archiveData[i+2] - 48;
 
-    for (i = 0; i < 30; i++)
-        isEmpty[i/6][i%6] = archiveData[i+15] - 48;
+    for (i = 0; i < (WIDTH+2)*(HEIGHT+2); i++)
+        isEmpty[i/(WIDTH+2)][i%(WIDTH+2)] = archiveData[i+2+WIDTH*HEIGHT] - 48;
 
-    i = 47;
-    if (archiveData[46] == 'i')
-        countdown = archiveData[45] - 48;
-    else {
-        tmp = archiveData[45] - 48;
-        countdown = tmp * 10 + archiveData[46] - 48;
-        i++;
+    begin = SUM + 1;
+    i = 0;
+    for (end = begin+1; i < 5; end++) {
+        if (archiveData[end] == 'i' || archiveData[end] == 'e') {
+            if (end - begin == 2)
+                array[i] = archiveData[begin+1] - 48;
+            else if (archiveData[begin+1] == '-')
+                array[i] = -1;
+            else {
+                tmp = (archiveData[begin+1] - 48) * 10;
+                array[i] = tmp + archiveData[begin+2] - 48;
+            }
+            begin = end;
+            i++;
+        }
     }
-    if (archiveData[i+1] == 'i')
-        score = archiveData[i] - 48;
-    else {
-        tmp = archiveData[i] - 48;
-        score = tmp * 10 + archiveData[i+1] - 48;
-        i++;
-    }
-    score *= 10;
-    if (archiveData[i+3] == 'i')
-        activePos = archiveData[i+2] - 48;
-    else if (archiveData[i+2] != '-'){
-        tmp = archiveData[i+2] - 48;
-        activePos = tmp * 10 + archiveData[i+1] - 48;
-        i++;
-    }
-    if (archiveData[i+5] == 'e')
-        activeType = archiveData[i+4] - 48;
+
+    countdown = array[0];
+    score = array[1];
+    role->posX = array[2];
+    activePos = array[3];
+    activeType = array[4];
 }
 
 void PlayScene::shuffle()
@@ -261,14 +262,14 @@ void PlayScene::shuffle()
     QTime time = QTime::currentTime();
     unsigned seed = time.msec() + time.second();
     srand(seed);
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++)
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++)
             boxType[i][j] = rand() % 3;
     }
 
     //加载箱子
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
             if (!isEmpty[i+1][j+1])
                 boxes[i][j]->changeType(boxType[i][j]);
         }
@@ -288,19 +289,19 @@ void PlayScene::paintEvent(QPaintEvent *)
     //画路线
     if (isPaintable) {
         QPainterPath path;
-        painter.setPen(QPen(Qt::black, 10));
-        path.moveTo(x1*100+150, y1*100+50);
-        path.lineTo(x01*100+150, y01*100+50);
+        painter.setPen(QPen(Qt::black, 8));
+        path.moveTo(x1*SIZE+1.5*SIZE, y1*SIZE+0.5*SIZE);
+        path.lineTo(x01*SIZE+1.5*SIZE, y01*SIZE+0.5*SIZE);
         if (x02 != -1 && y02 != -1)
-            path.lineTo(x02*100+150, y02*100+50);
-        path.lineTo(x2*100+150, y2*100+50);
+            path.lineTo(x02*SIZE+1.5*SIZE, y02*SIZE+0.5*SIZE);
+        path.lineTo(x2*SIZE+1.5*SIZE, y2*SIZE+0.5*SIZE);
         painter.drawPath(path);
     }
 
     QString str;
 
     //画倒计时
-    QRectF clock(0, 500, 195, 90);
+    QRectF clock(0, this->height()-100, 195, 90);
     painter.setPen(QPen(QColor(255, 0, 0), 5));
     painter.setFont(QFont("Arial", 18));
     if (countdown > 9)
@@ -311,7 +312,7 @@ void PlayScene::paintEvent(QPaintEvent *)
     painter.drawText(clock, Qt::AlignCenter, str);
 
     //画分数
-    QRectF scoreBoard(200, 500, 195, 90);
+    QRectF scoreBoard(200, this->height()-100, 195, 90);
     painter.setPen(QPen(QColor(0, 0, 255), 5));
     str = QString("得分 %1").arg(score);
     painter.drawRoundedRect(scoreBoard, 20, 15);
@@ -341,7 +342,7 @@ void PlayScene::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_S:
         role->direction = 4;
-        if (role->posY < 4 && isEmpty[role->posY+1][role->posX])
+        if (role->posY < HEIGHT+1 && isEmpty[role->posY+1][role->posX])
             role->posY += 1;
         else chooseBox();
         break;
@@ -353,7 +354,7 @@ void PlayScene::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_D:
         role->direction = 1;
-        if (role->posX < 5 && isEmpty[role->posY][role->posX+1])
+        if (role->posX < WIDTH+1 && isEmpty[role->posY][role->posX+1])
             role->posX += 1;
         else chooseBox();
         break;
@@ -369,7 +370,7 @@ void PlayScene::keyPressEvent(QKeyEvent *event)
     }
     role->changeDirection();
 
-    if (isFirst && role->posX + role->posY*6 == toolPos) {
+    if (isFirst && role->posX + role->posY*(WIDTH+2) == toolPos) {
         isFirst = false;
         toolLabel->clear();
         switch (toolType) {
@@ -401,11 +402,11 @@ void PlayScene::mousePressEvent(QMouseEvent *ev)
 {
     if (!isFlying) return;
     int x, y;
-    x = ev->x()/100 - 1;
-    y = ev->y()/100;
+    x = ev->x()/SIZE - 1;
+    y = ev->y()/SIZE;
     qDebug() << "点击" << x << y;
 
-    if (x < 0 || x > 5 || y < 0 || y > 4) return;
+    if (x < 0 || x > (WIDTH+1) || y < 0 || y > (HEIGHT+1)) return;
 
     if (isEmpty[y][x]) {
         role->posX = x;
@@ -415,20 +416,20 @@ void PlayScene::mousePressEvent(QMouseEvent *ev)
     }
     else {
         //点击箱子
-        int dir[4] = {1, -1, 6, -6};
-        int pos = x + y * 6;
+        int dir[4] = {1, -1, WIDTH+2, -WIDTH-2};
+        int pos = x + y * (WIDTH+2);
         for (int i = 0; i < 4; i++) {
             pos += dir[i];
-            if (isEmpty[pos/6][pos%6])
+            if (isEmpty[pos/(WIDTH+2)][pos%(WIDTH+2)])
                 break;
             pos -= dir[i];
         }
-        role->posX = pos % 6;
-        role->posY = pos / 6;
+        role->posX = pos % (WIDTH+2);
+        role->posY = pos / (WIDTH+2);
         this->update();
         isFlying = false;
 
-        int p = (x - 1) + (y - 1) * 4;
+        int p = (x - 1) + (y - 1) * (WIDTH);
         chooseBox(p);
     }
 }
@@ -439,24 +440,24 @@ void PlayScene::chooseBox(int x)
     if (x == -1) {
         switch (role->direction) {
         case 4:
-            if (role->posY >= 4) x = -1;
+            if (role->posY >= HEIGHT+1) x = -1;
             if (!isEmpty[role->posY+1][role->posX])
-                x = (role->posY*4 + role->posX -1);
+                x = (role->posY * WIDTH + role->posX -1);
             break;
         case -4:
             if (role->posY <= 0) x = -1;
             if (!isEmpty[role->posY-1][role->posX])
-                x = (role->posY * 4 + role->posX -9);
+                x = ((role->posY - 2) * WIDTH + role->posX - 1);
             break;
         case 1:
-            if (role->posX >= 5) x = -1;
+            if (role->posX >= WIDTH+1) x = -1;
             if (!isEmpty[role->posY][role->posX+1])
-                x = ((role->posY - 1) * 4 + role->posX);
+                x = ((role->posY - 1) * WIDTH + role->posX);
             break;
         case -1:
             if (role->posY <= 0) x = -1;
             if (!isEmpty[role->posY][role->posX-1])
-                x = (role->posY * 4 + role->posX - 6);
+                x = ((role->posY - 1) * WIDTH + role->posX - 2);
             break;
         }
 
@@ -466,24 +467,24 @@ void PlayScene::chooseBox(int x)
     //第一次激活
     if (activePos == -1) {
         activePos = x;
-        boxes[activePos/4][activePos%4]->changePix(false);
-        activeType = boxType[activePos/4][activePos%4];
+        boxes[activePos/WIDTH][activePos%WIDTH]->changePix(false);
+        activeType = boxType[activePos/WIDTH][activePos%WIDTH];
         return;
     }
 
     //取消激活
     if (activePos == x) {
-        boxes[activePos/4][activePos%4]->changePix(true);
+        boxes[activePos/WIDTH][activePos%WIDTH]->changePix(true);
         activePos = -1;
         activeType = -1;
     }
 
     //第二次激活
-    if (activeType == boxType[x/4][x%4]) {
+    if (activeType == boxType[x/WIDTH][x%WIDTH]) {
         secondPos = x;
         if (isRemovable()) {
             //clearBox(secondPos);
-            score += 20;
+            score += 2;
             //isWin = checkRemainder();//注释掉，以免影响isPaintable，或许应该改改isRemovable
         }
         else return;
@@ -498,7 +499,7 @@ bool PlayScene::horizontalPath(int dir)
 {
     int i, j, tmp;
 
-    for (i = x1 + dir; (i >= 0 && i <= 5); i += dir) {
+    for (i = x1 + dir; (i >= 0 && i < WIDTH+2); i += dir) {
         if (isEmpty[y1][i]) {
             tmp = i;
             y01 = y1;
@@ -538,7 +539,7 @@ bool PlayScene::verticalPath(int dirY, int dirX)
 {
     int i, j, tmp;
 
-    for (j = y1 + dirY; (j >= 0 && j < 5); j += dirY) {
+    for (j = y1 + dirY; (j >= 0 && j < HEIGHT+2); j += dirY) {
         if (isEmpty[j][x1]) {
             tmp = j;
             x01 = x1;
@@ -588,17 +589,17 @@ bool PlayScene::isRemovable()
 
     y01 = x01 = x02 = y02 = -1;
 
-    x1 = activePos%4 + 1;
-    x2 = secondPos%4 + 1;
-    y1 = activePos/4 + 1;
-    y2 = secondPos/4 + 1;
+    x1 = activePos%WIDTH + 1;
+    x2 = secondPos%WIDTH + 1;
+    y1 = activePos/WIDTH + 1;
+    y2 = secondPos/WIDTH + 1;
 
     //若1号在2号上方，转换
     if (y1 < y2) {
-        x2 = activePos%4 + 1;
-        x1 = secondPos%4 + 1;
-        y2 = activePos/4 + 1;
-        y1 = secondPos/4 + 1;
+        x2 = activePos%WIDTH + 1;
+        x1 = secondPos%WIDTH + 1;
+        y2 = activePos/WIDTH + 1;
+        y1 = secondPos/WIDTH + 1;
     }
     //向左找
     if (horizontalPath(-1)) return true;
@@ -623,7 +624,7 @@ bool PlayScene::isRemovable()
     isPaintable = false;
     x01 = x02 = y01 = y02 = -1;
 
-    if (abs(activePos - secondPos) == 1 || abs(activePos - secondPos) == 4)
+    if (abs(activePos - secondPos) == 1 || abs(activePos - secondPos) == WIDTH)
         return true;
 
     return false;
@@ -632,12 +633,12 @@ bool PlayScene::isRemovable()
 void PlayScene::clearBox(int activePos2)
 /***消除选中的箱子，并重置激活项***/
 {
-    boxes[activePos2/4][activePos2%4]->clear();
-    boxes[activePos/4][activePos%4]->clear();
+    boxes[activePos2/WIDTH][activePos2%WIDTH]->clear();
+    boxes[activePos/WIDTH][activePos%WIDTH]->clear();
     qDebug() << "消除";
 
-    isEmpty[activePos2/4+1][activePos2%4+1] = true;
-    isEmpty[activePos/4+1][activePos%4+1] = true;
+    isEmpty[activePos2/WIDTH+1][activePos2%WIDTH+1] = true;
+    isEmpty[activePos/WIDTH+1][activePos%WIDTH+1] = true;
     activeType = -1;
 
 //    //显示 消除 字样
@@ -652,8 +653,8 @@ bool PlayScene::checkRemainder()
 {
     int type[3]={0};
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
             if (!isEmpty[i+1][j+1])
                 type[boxType[i][j]]++;
         }
@@ -666,11 +667,11 @@ bool PlayScene::checkRemainder()
         int re[3][2];
         for (int i = 0; i < 6; i++)
             re[i/2][i%2] = -1;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++) {
                 if (!isEmpty[i+1][j+1]) {
-                    if (re[boxType[i][j]][0] == -1) re[boxType[i][j]][0] = i * 4 + j;
-                    else re[boxType[i][j]][1] = i * 4 + j;
+                    if (re[boxType[i][j]][0] == -1) re[boxType[i][j]][0] = i * WIDTH + j;
+                    else re[boxType[i][j]][1] = i * WIDTH + j;
                 }
             }
         }

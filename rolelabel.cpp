@@ -5,21 +5,22 @@ RoleLabel::RoleLabel(QWidget *parent, int num) : QLabel(parent)
     rolePixName = QString(":/res/role%1R.jpg").arg(num);
     number = num;
 
-    this->setFixedSize(100, 100);
+    this->setFixedSize(SIZE, SIZE);
 
-    this->setPixmap(QPixmap(rolePixName));
+    QPixmap pix = QPixmap(rolePixName);
+    this->setPixmap(pix.scaled(SIZE, SIZE));
 
     this->direction = 1;
 
     if (num == 2) {
-        posX = 5;
-        posY = 4;
+        posX = WIDTH+1;
+        posY = HEIGHT+1;
     }
 }
 
 void RoleLabel::moveInGame()
 {
-    this->move(posX * 100 + 100, posY * 100);
+    this->move(posX * SIZE + SIZE, posY * SIZE);
 }
 
 void RoleLabel::changeDirection()
@@ -38,5 +39,6 @@ void RoleLabel::changeDirection()
         rolePixName = QString(":/res/role%1U.jpg").arg(number);
         break;
     }
-    this->setPixmap(QPixmap(rolePixName));
+    QPixmap pix = QPixmap(rolePixName);
+    this->setPixmap(pix.scaled(SIZE, SIZE));
 }

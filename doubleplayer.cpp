@@ -18,7 +18,7 @@ DoublePlayer::DoublePlayer(QWidget *parent) : QWidget(parent)
 DoublePlayer::DoublePlayer(bool isNew)
 {
     //配置主场景
-    setFixedSize(800, 600);
+    setFixedSize(840, 700);
     setWindowIcon(QIcon(":/res/link.png"));
     setWindowTitle("双人连连看");
 
@@ -57,16 +57,18 @@ DoublePlayer::DoublePlayer(bool isNew)
         QTime time = QTime::currentTime();
         unsigned seed = time.msec() + time.second();
         srand(seed);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++)
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++)
                 boxType[i][j] = rand() % 3;
         }
 
         //初始化地图空间
-        for (int k = 0; k < 30; k++)
-            isEmpty[k/6][k%6] = true;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++)
+        for (int i = 0; i < HEIGHT+2; i++) {
+            for (int j = 0; j < WIDTH+2; j++)
+                isEmpty[i][j] = true;
+        }
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++)
                 isEmpty[i+1][j+1] = false;
         }
     }
@@ -77,21 +79,21 @@ DoublePlayer::DoublePlayer(bool isNew)
         role2->changeDirection();
     }
     //加载箱子
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
             if (!isEmpty[i+1][j+1]) {
                 boxes[i][j] = new BoxLabel(boxType[i][j]);
                 boxes[i][j]->setParent(this);
-                boxes[i][j]->move(200 + j*100, 100 + i*100);
+                boxes[i][j]->move(2*SIZE + j*SIZE, SIZE + i*SIZE);
             }
         }
     }
 
     if (!isNew) {
         if (activePos1[1] != -1)
-            boxes[activePos1[1]/4][activePos1[1]%4]->changePix(false, 1);
+            boxes[activePos1[1]/WIDTH][activePos1[1]%WIDTH]->changePix(false, 1);
         if (activePos1[2] != -1)
-            boxes[activePos1[2]/4][activePos1[2]%4]->changePix(false, 2);
+            boxes[activePos1[2]/WIDTH][activePos1[2]%WIDTH]->changePix(false, 2);
     }
 
     //设置1号胜利标志
@@ -153,7 +155,7 @@ void DoublePlayer::roleAction(RoleLabel *& role, int dir)
             chooseBox(role->number, role->posX-1, role->posY-2);
         break;
     case 4:
-        if (role->posY >= 4) return;
+        if (role->posY >= HEIGHT+1) return;
         if (isEmpty[role->posY+1][role->posX])
             role->posY += 1;
         else
@@ -167,7 +169,7 @@ void DoublePlayer::roleAction(RoleLabel *& role, int dir)
             chooseBox(role->number, role->posX-2, role->posY-1);
         break;
     case 1:
-        if (role->posX >= 5) return;
+        if (role->posX >= WIDTH+1) return;
         if (isEmpty[role->posY][role->posX+1])
             role->posX += 1;
         else
@@ -181,13 +183,13 @@ void DoublePlayer::chooseBox(int num, int x, int y)
     //第一次激活
     if (activeType[num] == -1) {
         activeType[num] = boxType[y][x];
-        activePos1[num] = x + y * 4;
+        activePos1[num] = x + y * WIDTH;
         boxes[y][x]->changePix(false, num);
         return;
     }
 
     //取消激活
-    if (activePos1[num] == x + y*4) {
+    if (activePos1[num] == x + y*WIDTH) {
         activeType[num] = -1;
         activePos1[num] = -1;
         boxes[y][x]->changePix(true);
@@ -196,8 +198,8 @@ void DoublePlayer::chooseBox(int num, int x, int y)
 
     //第二次激活
     if (activeType[num] == boxType[y][x]) {
-        x1 = activePos1[num] % 4 + 1;
-        y1 = activePos1[num] / 4 + 1;
+        x1 = activePos1[num] % WIDTH + 1;
+        y1 = activePos1[num] / WIDTH + 1;
         x2 = x + 1;
         y2 = y + 1;
         //判断能否消除
@@ -212,7 +214,7 @@ void DoublePlayer::chooseBox(int num, int x, int y)
         activePos1[num] = -1;
 
         //增加分数
-        score[num] += 20;
+        score[num] += 2;
 
         //判断是否结束
         int a1 = x1, a2 = x2, b1 = y1, b2 = y2;
@@ -264,8 +266,8 @@ bool DoublePlayer::checkRemainder()
 {
     int type[3]={0};
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
             if (!isEmpty[i+1][j+1])
                 type[boxType[i][j]]++;
         }
@@ -278,8 +280,8 @@ bool DoublePlayer::checkRemainder()
         int re[3][4];
         for (int i = 0; i < 12; i++)
             re[i/4][i%4] = -1;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++) {
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++) {
                 if (!isEmpty[i+1][j+1]) {
                     if (re[boxType[i][j]][0] == -1) {
                         re[boxType[i][j]][0] = i;
@@ -328,7 +330,7 @@ bool DoublePlayer::horizontalPath(int dir)
 {
     int i, j, tmp;
 
-    for (i = x1 + dir; (i >= 0 && i <= 5); i += dir) {
+    for (i = x1 + dir; (i >= 0 && i < WIDTH+2); i += dir) {
         if (isEmpty[y1][i]) {
             tmp = i;
             y01 = y1;
@@ -367,7 +369,7 @@ bool DoublePlayer::verticalPath(int dirY, int dirX)
 {
     int i, j, tmp;
 
-    for (j = y1 + dirY; (j >= 0 && j < 5); j += dirY) {
+    for (j = y1 + dirY; (j >= 0 && j < HEIGHT+2); j += dirY) {
         if (isEmpty[j][x1]) {
             tmp = j;
             x01 = x1;
@@ -422,18 +424,19 @@ void DoublePlayer::paintEvent(QPaintEvent *)
 
     //画路线
     if (isPaintable) {
-        QPainterPath path(QPoint(x1*100+150, y1*100+50));
+        QPainterPath path;
         painter.setPen(QPen(Qt::black, 10));
-        path.lineTo(x01*100+150, y01*100+50);
+        path.moveTo(x1*SIZE+1.5*SIZE, y1*SIZE+0.5*SIZE);
+        path.lineTo(x01*SIZE+1.5*SIZE, y01*SIZE+0.5*SIZE);
         if (x02 != -1 && y02 != -1)
-            path.lineTo(x02*100+150, y02*100+50);
-        path.lineTo(x2*100+150, y2*100+50);
+            path.lineTo(x02*SIZE+1.5*SIZE, y02*SIZE+0.5*SIZE);
+        path.lineTo(x2*SIZE+1.5*SIZE, y2*SIZE+0.5*SIZE);
         painter.drawPath(path);
     }
 
     //画倒计时
     QString clockStr;
-    QRectF clock(300, 505, 195, 95);
+    QRectF clock(0.5*this->width(), this->height()-100, 195, 95);
     painter.setPen(QPen(QColor(126, 126, 0), 5));
     painter.setFont(QFont("Arial", 18));
     if (countdown > 9)
@@ -444,13 +447,13 @@ void DoublePlayer::paintEvent(QPaintEvent *)
     painter.drawText(clock, Qt::AlignCenter, clockStr);
 
     //画分数
-    QRectF scoreBoard1(0, 505, 195, 95);
-    painter.setPen(QPen(QColor(0, 126, 126), 5));
+    QRectF scoreBoard1(0, this->height()-100, 195, 95);
+    painter.setPen(QPen(QColor(255, 255, 255), 5));
     QString scoreStr1 = QString("得分 %1").arg(score[1]);
     painter.drawRoundedRect(scoreBoard1, 20, 15);
     painter.drawText(scoreBoard1, Qt::AlignCenter, scoreStr1);
 
-    QRectF scoreBoard2(600, 505, 195, 95);
+    QRectF scoreBoard2(this->width()-200, this->height()-100, 195, 95);
     QString scoreStr2 = QString("得分 %1").arg(score[2]);
     painter.drawRoundedRect(scoreBoard2, 20, 15);
     painter.drawText(scoreBoard2, Qt::AlignCenter, scoreStr2);
@@ -576,14 +579,15 @@ void DoublePlayer::saveGameInf()
     int i = 0;
     std::stringstream ss;
 
-    ss << role1->direction + 4 << role1->posX << role1->posY;
-    ss << role2->direction + 4 << role2->posX << role2->posY;
-    for (i = 0; i < 12; i++)
-            ss << boxType[i/4][i%4];
-        for (i = 0; i < 30; i++)
-            ss << isEmpty[i/6][i%6];
+    ss << role1->direction + 4 << role1->posY;
+    ss << role2->direction + 4 << role2->posY;
+    for (i = 0; i < WIDTH*HEIGHT; i++)
+            ss << boxType[i/WIDTH][i%WIDTH];
+        for (i = 0; i < (WIDTH+2)*(HEIGHT+2); i++)
+            ss << isEmpty[i/(WIDTH+2)][i%(WIDTH+2)];
     ss << countdown << 'i'
-       << score[1]/10 << 'i' << score[2]/10 << 'i'
+       << score[1] << 'i' << score[2] << 'i'
+       << role1->posX << 'i' << role2->posX << 'i'
        << activePos1[1] << 'i' << activePos1[2] << 'i'
        << activeType[1] << 'i' << activeType[2] << 'e';
 
@@ -599,28 +603,26 @@ void DoublePlayer::saveGameInf()
 void DoublePlayer::loadGameInf()
 {
     int i, begin, end, tmp;
-    int array[7] = {0};
+    int array[9] = {0};
 
     archiveFile->open(QIODevice::ReadOnly);
-    if (-1 == archiveFile->read(archiveData, 70))
+    if (-1 == archiveFile->read(archiveData, SUM+28))
         qDebug() << "读取文件错误";
     archiveFile->close();
 
     role1->direction = archiveData[0] - 52;
-    role1->posX = archiveData[1] - 48;
-    role1->posY = archiveData[2] - 48;
-    role2->direction = archiveData[3] - 52;
-    role2->posX = archiveData[4] - 48;
-    role2->posY = archiveData[5] - 48;
+    role1->posY = archiveData[1] - 48;
+    role2->direction = archiveData[2] - 52;
+    role2->posY = archiveData[3] - 48;
 
-    for (i = 0; i < 12; i++)
-        boxType[i/4][i%4] = archiveData[i+6] - 48;
-    for (i = 0; i < 30; i++)
-        isEmpty[i/6][i%6] = archiveData[i+18] - 48;
+    for (i = 0; i < WIDTH*HEIGHT; i++)
+        boxType[i/WIDTH][i%WIDTH] = archiveData[i+4] - 48;
+    for (i = 0; i < (WIDTH+2)*(HEIGHT+2); i++)
+        isEmpty[i/(WIDTH+2)][i%(WIDTH+2)] = archiveData[i+4+WIDTH*HEIGHT] - 48;
 
-    begin = 47;
+    begin = SUM + 3;
     i = 0;
-    for (end = 48; i < 7; end++) {
+    for (end = begin+1; i < 9; end++) {
         if (archiveData[end] == 'i' || archiveData[end] == 'e') {
             if (end - begin == 2)
                 array[i] = archiveData[begin+1] - 48;
@@ -636,12 +638,14 @@ void DoublePlayer::loadGameInf()
     }
 
     countdown = array[0];
-    score[1] = array[1] * 10;
-    score[2] = array[2] * 10;
-    activePos1[1] = array[3];
-    activePos1[2] = array[4];
-    activeType[1] = array[5];
-    activeType[2] = array[6];
+    score[1] = array[1];
+    score[2] = array[2];
+    role1->posX = array[3];
+    role2->posX = array[4];
+    activePos1[1] = array[5];
+    activePos1[2] = array[6];
+    activeType[1] = array[7];
+    activeType[2] = array[8];
 
     qDebug() << activePos1[1] << activePos1[2];
 }

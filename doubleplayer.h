@@ -25,13 +25,13 @@ private:
 
     RoleLabel * role1, * role2;
 
-    int boxType[3][4];
-    BoxLabel * boxes[3][4];
+    int boxType[8][WIDTH];
+    BoxLabel * boxes[8][WIDTH];
 
-    bool isEmpty[5][6];
+    bool isEmpty[8+2][WIDTH+2];
 
     QTimer * timer;
-    int countdown = 15;
+    int countdown = 30;
     int score[3] = {0};
     bool isWin = false, isPause = false, isPaintable = false;
 
@@ -58,7 +58,7 @@ private:
     void loadGameInf();
 
     QFile * archiveFile;
-    char archiveData[75] = {'\0'};
+    char archiveData[33+SUM] = {'\0'};
 
 signals:
     void doublePlayerSceneBack();
