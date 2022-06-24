@@ -24,6 +24,7 @@ void RoleLabel::moveInGame()
 }
 
 void RoleLabel::changeDirection()
+/***改变表示当前朝向的图片***/
 {
     switch (this->direction) {
     case 1:

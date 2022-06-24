@@ -19,6 +19,11 @@ public:
     void keyPressEvent(QKeyEvent *);
     void mousePressEvent(QMouseEvent *);
 
+    int add(int i){return (i+1);}
+    int activePos = -1;
+    int secondPos = -1;
+    bool isRemovable();
+
 private:
     RoleLabel * role = NULL;
 
@@ -35,8 +40,6 @@ private:
     BoxLabel * boxes[8][WIDTH];
 
     int activeType = -1;
-    int activePos = -1;
-    int secondPos = -1;
     int x1, x2, y1, y2;
 
     int x01=-1, x02=-1, y01=-1, y02=-1;
@@ -60,7 +63,6 @@ private:
     void chooseBox(int x = -1);
     void clearBox(int);
 
-    bool isRemovable();
     bool checkRemainder();
     bool horizontalPath(int);
     bool verticalPath(int, int);

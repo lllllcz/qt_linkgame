@@ -171,6 +171,7 @@ PlayScene::PlayScene(bool isNew)
 }
 
 void PlayScene::pauseGame()
+/***暂停游戏***/
 {
     if (isPause) {
         isPause = false;
@@ -185,6 +186,7 @@ void PlayScene::pauseGame()
 }
 
 void PlayScene::saveGameInf()
+/***储存游戏数据***/
 {
     //储存数据
     //d+4,x,y,boxType,isEmpty,coundown,i,score,i,activePos,i,activeType,e
@@ -214,6 +216,7 @@ void PlayScene::saveGameInf()
 }
 
 void PlayScene::loadGameInf()
+/***加载游戏数据***/
 {
     int i = 0, begin, end, tmp;
     int array[5] = {0};
@@ -257,6 +260,7 @@ void PlayScene::loadGameInf()
 }
 
 void PlayScene::shuffle()
+/***重新排列***/
 {
     //重置箱子
     QTime time = QTime::currentTime();
@@ -273,6 +277,10 @@ void PlayScene::shuffle()
             if (!isEmpty[i+1][j+1])
                 boxes[i][j]->changeType(boxType[i][j]);
         }
+    }
+    if(activePos != -1){
+        boxes[activePos/WIDTH][activePos%WIDTH]->changePix(false);
+        //activeType = boxType[activePos/4][activePos%4];
     }
     this->update();
 }
@@ -417,12 +425,17 @@ void PlayScene::mousePressEvent(QMouseEvent *ev)
     else {
         //点击箱子
         int dir[4] = {1, -1, WIDTH+2, -WIDTH-2};
+        int i;
         int pos = x + y * (WIDTH+2);
-        for (int i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++) {
             pos += dir[i];
             if (isEmpty[pos/(WIDTH+2)][pos%(WIDTH+2)])
                 break;
             pos -= dir[i];
+        }
+        if ( i == 4 ) {
+            isFlying = false;
+            return;
         }
         role->posX = pos % (WIDTH+2);
         role->posY = pos / (WIDTH+2);
@@ -496,6 +509,7 @@ void PlayScene::chooseBox(int x)
 }
 
 bool PlayScene::horizontalPath(int dir)
+/***判断有无水平方向路径***/
 {
     int i, j, tmp;
 
@@ -536,6 +550,7 @@ bool PlayScene::horizontalPath(int dir)
 }
 
 bool PlayScene::verticalPath(int dirY, int dirX)
+/***判断有无垂直方向路径***/
 {
     int i, j, tmp;
 
@@ -583,6 +598,7 @@ bool PlayScene::verticalPath(int dirY, int dirX)
 }
 
 bool PlayScene::isRemovable()
+/***判断能否消除***/
 {
     //表示刚才进行了消除操作，需要显示路线，并在下一次移动后消除路线
     isPaintable = true;
@@ -727,6 +743,7 @@ void PlayScene::setAnimation(QLabel * label)
 }
 
 void PlayScene::setMyLabel(QLabel *& label, QPixmap pix, int y, int x)
+/***对标签的处理***/
 {
     label = new QLabel(this);
     label->setGeometry(0, 0, pix.width(), pix.height());

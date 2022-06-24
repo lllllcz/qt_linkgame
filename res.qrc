@@ -1,0 +1,38 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/link.png</file>
+        <file>res/startBack.png</file>
+        <file>res/startButton.png</file>
+        <file>res/back.png</file>
+        <file>res/playBack.png</file>
+        <file>res/box1.png</file>
+        <file>res/box2.png</file>
+        <file>res/box3.png</file>
+        <file>res/activeBox11.png</file>
+        <file>res/role1D.jpg</file>
+        <file>res/role1L.jpg</file>
+        <file>res/role1R.jpg</file>
+        <file>res/role1U.jpg</file>
+        <file>res/activeBox12.png</file>
+        <file>res/activeBox13.png</file>
+        <file>res/succeed.png</file>
+        <file>res/clear.png</file>
+        <file>res/fail.png</file>
+        <file>res/tool1.png</file>
+        <file>res/tool2.png</file>
+        <file>res/pause.png</file>
+        <file>res/pausing.png</file>
+        <file>res/tool3.png</file>
+        <file>res/activeBox21.png</file>
+        <file>res/activeBox22.png</file>
+        <file>res/activeBox23.png</file>
+        <file>res/role2D.jpg</file>
+        <file>res/role2L.jpg</file>
+        <file>res/role2R.jpg</file>
+        <file>res/role2U.jpg</file>
+        <file>res/succeed1.png</file>
+        <file>res/succeed2.png</file>
+        <file>res/deuce.png</file>
+        <file>res/playBack2.jpg</file>
+    </qresource>
+</RCC>

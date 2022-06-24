@@ -22,6 +22,7 @@ BoxLabel::BoxLabel(int type)
 }
 
 void BoxLabel::changePix(bool isActive, int num)
+/***用于改变显示箱子状态的图片***/
 {
     QPixmap boxPix;
     QString str;
@@ -36,6 +37,7 @@ void BoxLabel::changePix(bool isActive, int num)
 }
 
 void BoxLabel::changeType(int type)
+/***用于重排***/
 {
     boxType = type;
 

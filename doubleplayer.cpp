@@ -225,6 +225,7 @@ void DoublePlayer::chooseBox(int num, int x, int y)
 
 bool DoublePlayer::isRemovable()
 {
+    x01 = x02 = y01 = y02 = -1;
     if (x1 == x2 && abs(y1 - y2) == 1) return true;
     if (y1 == y2 && abs(x1 - x2) == 1) return true;
 
@@ -235,7 +236,6 @@ bool DoublePlayer::isRemovable()
         exchange(x1, x2);
         exchange(y1, y2);
     }
-    x01 = x02 = y01 = y02 = -1;
     //向左找
     if (horizontalPath(-1)) return true;
     //向右找
